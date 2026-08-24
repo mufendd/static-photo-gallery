@@ -115,55 +115,53 @@
             },
 
             handleHashChange() {
-    
                 const rawPath = window.location.hash.substring(1) || '';
                 let path = rawPath;
                 try {
                     path = decodeURIComponent(rawPath);
                 } catch (e) {
-                console.error("Path decode error:", e);
-            }
-    this.loadGallery(path);
-},
+                    console.error("Path decode error:", e);
+                }
+                this.loadGallery(path);
+            },
             
-           async loadGallery(path) {
-    this.state.currentPath = path;
-    this.elements.loader.classList.remove('hidden');
-    this.elements.galleryContent.classList.add('hidden');
-    this.elements.errorMessage.classList.add('hidden');
-    this.elements.galleryContent.innerHTML = '';
+            async loadGallery(path) {
+                this.state.currentPath = path;
+                this.elements.loader.classList.remove('hidden');
+                this.elements.galleryContent.classList.add('hidden');
+                this.elements.errorMessage.classList.add('hidden');
+                this.elements.galleryContent.innerHTML = '';
 
-    this.updateBreadcrumbs(path);
+                this.updateBreadcrumbs(path);
 
-    // 对路径按层级拆分编码，精准拼接 index.json
-    const parts = path.split('/').filter(Boolean).map(encodeURIComponent);
-    const indexPath = parts.length > 0 ? `${parts.join('/')}/index.json` : 'index.json';
+                // 直接使用标准相对路径，让浏览器原生处理 fetch 的 URL 转义
+                const indexPath = path ? `${path}/index.json` : 'index.json';
 
-    try {
-        const response = await fetch(indexPath, { cache: 'no-cache' });
-        if (!response.ok) {
-            throw new Error(`Folder not found or network error (status: ${response.status})`);
-        }
-        const data = await response.json();
+                try {
+                    const response = await fetch(indexPath, { cache: 'no-cache' });
+                    if (!response.ok) {
+                        throw new Error(`Folder not found or network error (status: ${response.status})`);
+                    }
+                    const data = await response.json();
 
-        data.folders = data.folders || [];
-        data.photos = data.photos || [];
+                    data.folders = data.folders || [];
+                    data.photos = data.photos || [];
 
-        data.folders.sort((a, b) => a.name.localeCompare(b.name));
-        data.photos.sort((a, b) => a.localeCompare(b));
+                    data.folders.sort((a, b) => a.name.localeCompare(b.name));
+                    data.photos.sort((a, b) => a.localeCompare(b));
 
-        this.renderFolders(data.folders || []);
-        this.renderPhotos(data.photos || []);
+                    this.renderFolders(data.folders || []);
+                    this.renderPhotos(data.photos || []);
 
-    } catch (error) {
-        console.error('Failed to load gallery data:', error);
-        this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
-        this.elements.errorMessage.classList.remove('hidden');
-    } finally {
-        this.elements.loader.classList.add('hidden');
-        this.elements.galleryContent.classList.remove('hidden');
-    }
-},
+                } catch (error) {
+                    console.error('Failed to load gallery data:', error);
+                    this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
+                    this.elements.errorMessage.classList.remove('hidden');
+                } finally {
+                    this.elements.loader.classList.add('hidden');
+                    this.elements.galleryContent.classList.remove('hidden');
+                }
+            },
 
             renderFolders(folders) {
                 folders.forEach(folder => {
@@ -171,7 +169,7 @@
                     const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
                     
                     const element = document.createElement('a');
-                    element.href = `#${folderPath}`;
+                    element.href = `#${encodeURI(folderPath)}`;
                     element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden p-4';
                     
                     element.innerHTML = `
@@ -186,7 +184,6 @@
 
             renderPhotos(photos) {
                 photos.forEach(photoName => {
-                    // 1. 拼接相对路径并使用 encodeURI 进行中文安全编码
                     const relativePath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
                     const photoPath = `${this.config.baseUrl}${encodeURI(relativePath)}`;
                     
@@ -200,7 +197,6 @@
                     img.loading = 'lazy';
                     img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
                     
-                    // 2. 核心补丁：自动尝试反转 .jpg / .JPG 大小写后缀
                     img.onerror = function() {
                         if (this.src.endsWith('.jpg')) {
                             this.src = this.src.replace(/\.jpg$/, '.JPG');
@@ -236,15 +232,9 @@
                     this.elements.breadcrumbs.appendChild(separator);
 
                     const partLink = document.createElement('a');
-                    partLink.href = `#${cumulativePath}`;
+                    partLink.href = `#${encodeURI(cumulativePath)}`;
                     partLink.className = 'hover:text-blue-600 hover:underline';
-                    
-                    try {
-                        partLink.textContent = decodeURIComponent(part);
-                    } catch (e) {
-                        console.error("Could not decode breadcrumb part:", part, e);
-                        partLink.textContent = part;
-                    }
+                    partLink.textContent = part;
                     this.elements.breadcrumbs.appendChild(partLink);
                 });
             },
