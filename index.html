@@ -89,7 +89,7 @@
     <script>
         const galleryApp = {
             config: {
-                baseUrl: 'https://mufendd.de5.net/'', 
+                baseUrl: 'https://mufendd.de5.net/', 
             },
 
             state: {
@@ -120,41 +120,43 @@
             },
             
             async loadGallery(path) {
-                this.state.currentPath = path;
-                this.elements.loader.classList.remove('hidden');
-                this.elements.galleryContent.classList.add('hidden');
-                this.elements.errorMessage.classList.add('hidden');
-                this.elements.galleryContent.innerHTML = '';
+    this.state.currentPath = path;
+    this.elements.loader.classList.remove('hidden');
+    this.elements.galleryContent.classList.add('hidden');
+    this.elements.errorMessage.classList.add('hidden');
+    this.elements.galleryContent.innerHTML = '';
 
-                this.updateBreadcrumbs(path);
+    this.updateBreadcrumbs(path);
 
-                const indexPath = `${path ? path + '/' : ''}index.json`;
+    // 请求 GitHub 自身的 index.json 文件（不要加 baseUrl）
+    const relativeJsonPath = `${path ? path + '/' : ''}index.json`;
+    const indexPath = encodeURI(relativeJsonPath);
 
-                try {
-                    const response = await fetch(indexPath, { cache: 'no-cache' });
-                    if (!response.ok) {
-                        throw new Error(`Folder not found or network error (status: ${response.status})`);
-                    }
-                    const data = await response.json();
+    try {
+        const response = await fetch(indexPath, { cache: 'no-cache' });
+        if (!response.ok) {
+            throw new Error(`Folder not found or network error (status: ${response.status})`);
+        }
+        const data = await response.json();
 
-                    data.folders = data.folders || [];
-                    data.photos = data.photos || [];
+        data.folders = data.folders || [];
+        data.photos = data.photos || [];
 
-                    data.folders.sort((a, b) => a.name.localeCompare(b.name));
-                    data.photos.sort((a, b) => a.localeCompare(b));
+        data.folders.sort((a, b) => a.name.localeCompare(b.name));
+        data.photos.sort((a, b) => a.localeCompare(b));
 
-                    this.renderFolders(data.folders || []);
-                    this.renderPhotos(data.photos || []);
+        this.renderFolders(data.folders || []);
+        this.renderPhotos(data.photos || []);
 
-                } catch (error) {
-                    console.error('Failed to load gallery data:', error);
-                    this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
-                    this.elements.errorMessage.classList.remove('hidden');
-                } finally {
-                    this.elements.loader.classList.add('hidden');
-                    this.elements.galleryContent.classList.remove('hidden');
-                }
-            },
+    } catch (error) {
+        console.error('Failed to load gallery data:', error);
+        this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
+        this.elements.errorMessage.classList.remove('hidden');
+    } finally {
+        this.elements.loader.classList.add('hidden');
+        this.elements.galleryContent.classList.remove('hidden');
+    }
+},
 
             renderFolders(folders) {
     folders.forEach(folder => {
