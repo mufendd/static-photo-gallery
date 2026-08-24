@@ -91,55 +91,219 @@
     </div>
 
     <script>
-        const galleryApp = {
-    // 1. 配置项：替换为你的 Cloudflare R2 公共域名
-    config: {
-        baseUrl: 'https://pub-26be4e6c7a4e47a2bbc00941c6d07260.r2.dev', // 末尾带 / 
-    },
+    const galleryApp = {
+        // ==================================================================
+        // --- CONFIGURATION ---
+        // ==================================================================
+        config: {
+            // 使用你的 R2 自定义域名
+            baseUrl: 'https://mufendd.de5.net/', 
+        },
 
-    state: { currentPath: '' },
-    elements: { /* ...DOM 元素保持不变... */ },
+        // ==================================================================
+        // --- APPLICATION STATE ---
+        // ==================================================================
+        state: {
+            currentPath: '',
+        },
 
-    async loadGallery(path) {
-        this.state.currentPath = path;
-        this.elements.loader.classList.remove('hidden');
-        this.elements.galleryContent.classList.add('hidden');
-        this.elements.errorMessage.classList.add('hidden');
-        this.elements.galleryContent.innerHTML = '';
-
-        this.updateBreadcrumbs(path);
-
-        // 2. JSON 请求保持相对路径，从 GitHub Pages 读取
-        const indexPath = `${path ? path + '/' : ''}index.json`;
-
-        try {
-            const response = await fetch(indexPath, { cache: 'no-cache' });
-            if (!response.ok) {
-                throw new Error(`Folder not found or network error (status: ${response.status})`);
+        // ==================================================================
+        // --- DOM ELEMENTS ---
+        // ==================================================================
+        elements: {
+            loader: document.getElementById('loader'),
+            errorMessage: document.getElementById('error-message'),
+            galleryContent: document.getElementById('gallery-content'),
+            breadcrumbs: document.getElementById('breadcrumbs'),
+            modal: {
+                backdrop: document.getElementById('modal-backdrop'),
+                content: document.getElementById('modal-content'),
+                image: document.getElementById('modal-image'),
+                caption: document.getElementById('modal-caption'),
             }
-            const data = await response.json();
+        },
 
-            data.folders = data.folders || [];
-            data.photos = data.photos || [];
+        // ==================================================================
+        // --- CORE LOGIC ---
+        // ==================================================================
 
-            data.folders.sort((a, b) => a.name.localeCompare(b.name));
-            data.photos.sort((a, b) => a.localeCompare(b));
+        init() {
+            window.addEventListener('hashchange', () => this.handleHashChange());
+            this.handleHashChange();
+        },
 
-            this.renderFolders(data.folders || []);
-            this.renderPhotos(data.photos || []);
+        handleHashChange() {
+            const path = window.location.hash.substring(1) || '';
+            this.loadGallery(path);
+        },
+        
+        async loadGallery(path) {
+            this.state.currentPath = path;
+            this.elements.loader.classList.remove('hidden');
+            this.elements.galleryContent.classList.add('hidden');
+            this.elements.errorMessage.classList.add('hidden');
+            this.elements.galleryContent.innerHTML = '';
 
-        } catch (error) {
-            console.error('Failed to load gallery data:', error);
-            this.elements.errorMessage.textContent = `Error: Could not load gallery. Details: ${error.message}`;
-            this.elements.errorMessage.classList.remove('hidden');
-        } finally {
-            this.elements.loader.classList.add('hidden');
-            this.elements.galleryContent.classList.remove('hidden');
+            this.updateBreadcrumbs(path);
+
+            // 读取 GitHub Pages 上的 index.json
+            const indexPath = `${path ? path + '/' : ''}index.json`;
+
+            try {
+                const response = await fetch(indexPath, { cache: 'no-cache' });
+                if (!response.ok) {
+                    throw new Error(`Folder not found or network error (status: ${response.status})`);
+                }
+                const data = await response.json();
+
+                data.folders = data.folders || [];
+                data.photos = data.photos || [];
+
+                data.folders.sort((a, b) => a.name.localeCompare(b.name));
+                data.photos.sort((a, b) => a.localeCompare(b));
+
+                this.renderFolders(data.folders || []);
+                this.renderPhotos(data.photos || []);
+
+            } catch (error) {
+                console.error('Failed to load gallery data:', error);
+                this.elements.errorMessage.textContent = `Error: Could not load gallery. Details: ${error.message}`;
+                this.elements.errorMessage.classList.remove('hidden');
+            } finally {
+                this.elements.loader.classList.add('hidden');
+                this.elements.galleryContent.classList.remove('hidden');
+            }
+        },
+
+        // ==================================================================
+        // --- RENDERING FUNCTIONS ---
+        // ==================================================================
+
+        renderFolders(folders) {
+            folders.forEach(folder => {
+                const folderName = folder.name;
+                const photoCount = folder.photoCount;
+                const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
+                
+                const element = document.createElement('a');
+                element.href = `#${folderPath}`;
+                element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden';
+                
+                const photoCountBadge = photoCount > 0 ?
+                    `<span class="inline-flex items-center text-xs mt-3 text-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                        </svg>
+                        ${photoCount} 张照片
+                    </span>
+                ` : '';
+
+                element.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                    </svg>
+                    <span class="mt-2 text-sm font-medium text-center text-gray-700 px-2 break-all">${folderName}</span>
+                    ${photoCountBadge}
+                `;
+                this.elements.galleryContent.appendChild(element);
+            });
+        },
+
+        renderPhotos(photos) {
+            photos.forEach(photoName => {
+                const photoPath = `${this.config.baseUrl}${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
+                
+                const element = document.createElement('div');
+                element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
+                element.onclick = () => this.showModal(photoPath, photoName);
+
+                const img = document.createElement('img');
+                img.src = photoPath;
+                img.alt = photoName;
+                img.loading = 'lazy';
+                img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
+                img.onerror = function() {
+                    this.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
+                };
+
+                element.appendChild(img);
+                this.elements.galleryContent.appendChild(element);
+            });
+        },
+
+        updateBreadcrumbs(path) {
+            this.elements.breadcrumbs.innerHTML = '';
+            const parts = path.split('/').filter(Boolean);
+            
+            const homeLink = document.createElement('a');
+            homeLink.href = '#';
+            homeLink.className = 'hover:text-blue-600 hover:underline';
+            homeLink.textContent = '首页';
+            this.elements.breadcrumbs.appendChild(homeLink);
+
+            let cumulativePath = '';
+            parts.forEach(part => {
+                cumulativePath += (cumulativePath ? '/' : '') + part;
+                
+                const separator = document.createElement('span');
+                separator.className = 'mx-2';
+                separator.textContent = '/';
+                this.elements.breadcrumbs.appendChild(separator);
+
+                const partLink = document.createElement('a');
+                partLink.href = `#${cumulativePath}`;
+                partLink.className = 'hover:text-blue-600 hover:underline';
+                
+                try {
+                    partLink.textContent = decodeURIComponent(part);
+                } catch (e) {
+                    console.error("Could not decode breadcrumb part:", part, e);
+                    partLink.textContent = part;
+                }
+                this.elements.breadcrumbs.appendChild(partLink);
+            });
+        },
+
+        // ==================================================================
+        // --- MODAL CONTROLS ---
+        // ==================================================================
+
+        showModal(imageUrl, caption) {
+            this.elements.modal.image.src = imageUrl;
+            this.elements.modal.caption.textContent = caption;
+            
+            this.elements.modal.backdrop.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                this.elements.modal.backdrop.classList.add('opacity-100');
+                this.elements.modal.content.classList.remove('scale-95', 'opacity-0');
+                this.elements.modal.content.classList.add('scale-100', 'opacity-100');
+            });
+
+            window.addEventListener('keydown', this.handleKeydown);
+        },
+
+        closeModal() {
+            this.elements.modal.backdrop.classList.remove('opacity-100');
+            this.elements.modal.content.classList.remove('scale-100', 'opacity-100');
+            this.elements.modal.content.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                this.elements.modal.backdrop.classList.add('hidden');
+                this.elements.modal.image.src = '';
+            }, 300);
+
+            window.removeEventListener('keydown', this.handleKeydown);
+        },
+
+        handleKeydown(e) {
+            if (e.key === 'Escape') {
+                galleryApp.closeModal();
+            }
         }
-    },
+    };
 
-    // ...其余渲染与弹窗逻辑保持不动...
-};
+    document.addEventListener('DOMContentLoaded', () => galleryApp.init());
+</script>
 
             // ==================================================================
             // --- CORE LOGIC ---
