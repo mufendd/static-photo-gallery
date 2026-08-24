@@ -1,6 +1,10 @@
+JSON
 {
-  "folders": [],
-  "photos": [
-    "DSC06164.jpg"
-  ]
+  "folders": [
+    {
+      "name": "1",
+      "photoCount": 6
+    }
+  ],
+  "photos": []
 }
