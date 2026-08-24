@@ -139,9 +139,10 @@
 
                     data.folders = data.folders || [];
                     data.photos = data.photos || [];
-
-                    data.folders.sort((a, b) => a.name.localeCompare(b.name));
-                    data.photos.sort((a, b) => a.localeCompare(b));
+                    
+                   // 使用 numeric: true 启用自然数排序 (例如：1, 2, 3... 10 而不是 1, 10, 2)
+                    data.folders.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+                    data.photos.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
                     this.renderFolders(data.folders || []);
                     this.renderPhotos(data.photos || []);
