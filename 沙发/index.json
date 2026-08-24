@@ -1,7 +1,6 @@
 {
-  "files": [
-    "sofa1.jpg",
-    "sofa2.jpg"
-  ],
-  "directories": []
+  "folders": [],
+  "photos": [
+    "sofa1.jpg"
+  ]
 }
