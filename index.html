@@ -120,65 +120,64 @@
             },
             
             async loadGallery(path) {
-    this.state.currentPath = path;
-    this.elements.loader.classList.remove('hidden');
-    this.elements.galleryContent.classList.add('hidden');
-    this.elements.errorMessage.classList.add('hidden');
-    this.elements.galleryContent.innerHTML = '';
+                this.state.currentPath = path;
+                this.elements.loader.classList.remove('hidden');
+                this.elements.galleryContent.classList.add('hidden');
+                this.elements.errorMessage.classList.add('hidden');
+                this.elements.galleryContent.innerHTML = '';
 
-    this.updateBreadcrumbs(path);
+                this.updateBreadcrumbs(path);
 
-    // 请求 GitHub 自身的 index.json 文件（不要加 baseUrl）
-    const relativeJsonPath = `${path ? path + '/' : ''}index.json`;
-    const indexPath = encodeURI(relativeJsonPath);
+                // 请求 GitHub 自身的 index.json 文件（不要加 baseUrl）
+                const relativeJsonPath = `${path ? path + '/' : ''}index.json`;
+                const indexPath = encodeURI(relativeJsonPath);
 
-    try {
-        const response = await fetch(indexPath, { cache: 'no-cache' });
-        if (!response.ok) {
-            throw new Error(`Folder not found or network error (status: ${response.status})`);
-        }
-        const data = await response.json();
+                try {
+                    const response = await fetch(indexPath, { cache: 'no-cache' });
+                    if (!response.ok) {
+                        throw new Error(`Folder not found or network error (status: ${response.status})`);
+                    }
+                    const data = await response.json();
 
-        data.folders = data.folders || [];
-        data.photos = data.photos || [];
+                    data.folders = data.folders || [];
+                    data.photos = data.photos || [];
 
-        data.folders.sort((a, b) => a.name.localeCompare(b.name));
-        data.photos.sort((a, b) => a.localeCompare(b));
+                    data.folders.sort((a, b) => a.name.localeCompare(b.name));
+                    data.photos.sort((a, b) => a.localeCompare(b));
 
-        this.renderFolders(data.folders || []);
-        this.renderPhotos(data.photos || []);
+                    this.renderFolders(data.folders || []);
+                    this.renderPhotos(data.photos || []);
 
-    } catch (error) {
-        console.error('Failed to load gallery data:', error);
-        this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
-        this.elements.errorMessage.classList.remove('hidden');
-    } finally {
-        this.elements.loader.classList.add('hidden');
-        this.elements.galleryContent.classList.remove('hidden');
-    }
-},
+                } catch (error) {
+                    console.error('Failed to load gallery data:', error);
+                    this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
+                    this.elements.errorMessage.classList.remove('hidden');
+                } finally {
+                    this.elements.loader.classList.add('hidden');
+                    this.elements.galleryContent.classList.remove('hidden');
+                }
+            },
 
             renderFolders(folders) {
-    folders.forEach(folder => {
-        const folderName = folder.name;
-        const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
-        
-        const element = document.createElement('a');
-        element.href = `#${folderPath}`;
-        element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden p-4';
-        
-        // 不渲染张数角标，只显示图标和文件夹名称
-        element.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors mb-2" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-            </svg>
-            <span class="text-sm font-medium text-center text-gray-700 break-all leading-tight">${folderName}</span>
-        `;
-        this.elements.galleryContent.appendChild(element);
-    });
-},
+                folders.forEach(folder => {
+                    const folderName = folder.name;
+                    const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
+                    
+                    const element = document.createElement('a');
+                    element.href = `#${folderPath}`;
+                    element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden p-4';
+                    
+                    element.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors mb-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                        </svg>
+                        <span class="text-sm font-medium text-center text-gray-700 break-all leading-tight">${folderName}</span>
+                    `;
+                    this.elements.galleryContent.appendChild(element);
+                });
+            },
 
-renderPhotos(photos) {
+            renderPhotos(photos) {
                 photos.forEach(photoName => {
                     // 1. 拼接相对路径并使用 encodeURI 进行中文安全编码
                     const relativePath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
