@@ -1,8 +1,10 @@
 {
   "folders": [
     {
-      "name": "1",
-      "photoCount": 6
+      "name": "1"
+    },
+    {
+      "name": "2"
     }
   ],
   "photos": []
