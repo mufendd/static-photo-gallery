@@ -1,6 +1,8 @@
 {
   "files": [],
   "directories": [
-    "沙发"
+    {
+      "name": "沙发"
+    }
   ]
 }
