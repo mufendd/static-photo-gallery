@@ -1,8 +1,9 @@
 {
-  "files": [],
-  "directories": [
+  "folders": [
     {
-      "name": "沙发"
+      "name": "沙发",
+      "photoCount": 1
     }
-  ]
+  ],
+  "photos": []
 }
