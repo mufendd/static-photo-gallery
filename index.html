@@ -175,27 +175,25 @@
     });
 },
 
-            renderPhotos(photos) {
-                photos.forEach(photoName => {
-                    const photoPath = `${this.config.baseUrl}${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
-                    
-                    const element = document.createElement('div');
-                    element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
-                    element.onclick = () => this.showModal(photoPath, photoName);
+           renderPhotos(photos) {
+            photos.forEach(photoName => {
+                const relativePath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
+                const photoPath = `${this.config.baseUrl}${encodeURI(relativePath)}`;
+                
+                const element = document.createElement('div');
+                element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer select-none';
+                element.onclick = () => this.showModal(photoPath, photoName);
 
-                    const img = document.createElement('img');
-                    img.src = photoPath;
-                    img.alt = photoName;
-                    img.loading = 'lazy';
-                    img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
-                    img.onerror = function() {
-                        this.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
-                    };
+                // 渲染图片 + 叠加透明防护层
+                element.innerHTML = `
+                    <img src="${photoPath}" alt="${photoName}" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 pointer-events-none" onerror="this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center bg-gray-100 text-red-500\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' class=\\'h-8 w-8\\' fill=\\'none\\' viewBox=\\'0 0 24 24\\' stroke=\\'currentColor\\'><path stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\\' /></svg></div>'">
+                    <!-- 防右键与防拖拽遮罩 -->
+                    <div class="absolute inset-0 z-10 bg-transparent"></div>
+                `;
 
-                    element.appendChild(img);
-                    this.elements.galleryContent.appendChild(element);
-                });
-            },
+                this.elements.galleryContent.appendChild(element);
+            });
+        },
 
             updateBreadcrumbs(path) {
                 this.elements.breadcrumbs.innerHTML = '';
