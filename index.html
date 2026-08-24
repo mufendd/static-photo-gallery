@@ -92,35 +92,54 @@
 
     <script>
         const galleryApp = {
-            // ==================================================================
-            // --- CONFIGURATION ---
-            // ==================================================================
-            config: {
-                baseUrl: '', 
-            },
+    // 1. 配置项：替换为你的 Cloudflare R2 公共域名
+    config: {
+        baseUrl: 'https://mufendd.de5.net/', // 末尾带 / 
+    },
 
-            // ==================================================================
-            // --- APPLICATION STATE ---
-            // ==================================================================
-            state: {
-                currentPath: '',
-            },
+    state: { currentPath: '' },
+    elements: { /* ...DOM 元素保持不变... */ },
 
-            // ==================================================================
-            // --- DOM ELEMENTS ---
-            // ==================================================================
-            elements: {
-                loader: document.getElementById('loader'),
-                errorMessage: document.getElementById('error-message'),
-                galleryContent: document.getElementById('gallery-content'),
-                breadcrumbs: document.getElementById('breadcrumbs'),
-                modal: {
-                    backdrop: document.getElementById('modal-backdrop'),
-                    content: document.getElementById('modal-content'),
-                    image: document.getElementById('modal-image'),
-                    caption: document.getElementById('modal-caption'),
-                }
-            },
+    async loadGallery(path) {
+        this.state.currentPath = path;
+        this.elements.loader.classList.remove('hidden');
+        this.elements.galleryContent.classList.add('hidden');
+        this.elements.errorMessage.classList.add('hidden');
+        this.elements.galleryContent.innerHTML = '';
+
+        this.updateBreadcrumbs(path);
+
+        // 2. JSON 请求保持相对路径，从 GitHub Pages 读取
+        const indexPath = `${path ? path + '/' : ''}index.json`;
+
+        try {
+            const response = await fetch(indexPath, { cache: 'no-cache' });
+            if (!response.ok) {
+                throw new Error(`Folder not found or network error (status: ${response.status})`);
+            }
+            const data = await response.json();
+
+            data.folders = data.folders || [];
+            data.photos = data.photos || [];
+
+            data.folders.sort((a, b) => a.name.localeCompare(b.name));
+            data.photos.sort((a, b) => a.localeCompare(b));
+
+            this.renderFolders(data.folders || []);
+            this.renderPhotos(data.photos || []);
+
+        } catch (error) {
+            console.error('Failed to load gallery data:', error);
+            this.elements.errorMessage.textContent = `Error: Could not load gallery. Details: ${error.message}`;
+            this.elements.errorMessage.classList.remove('hidden');
+        } finally {
+            this.elements.loader.classList.add('hidden');
+            this.elements.galleryContent.classList.remove('hidden');
+        }
+    },
+
+    // ...其余渲染与弹窗逻辑保持不动...
+};
 
             // ==================================================================
             // --- CORE LOGIC ---
