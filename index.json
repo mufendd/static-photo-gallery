@@ -1,9 +1,12 @@
 {
   "folders": [
-    {
-      "name": "沙发",
-      "photoCount": 6
-    }
+    { "name": "沙发" },
+    { "name": "椅子" },
+    { "name": "单人沙发" },
+    { "name": "桌子" },
+    { "name": "床" },
+    { "name": "柜子" },
+    { "name": "其他" }
   ],
   "photos": []
 }
