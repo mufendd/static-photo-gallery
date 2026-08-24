@@ -157,34 +157,24 @@
             },
 
             renderFolders(folders) {
-                folders.forEach(folder => {
-                    const folderName = folder.name;
-                    const photoCount = folder.photoCount;
-                    const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
-                    
-                    const element = document.createElement('a');
-                    element.href = `#${folderPath}`;
-                    element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden';
-                    
-                    const photoCountBadge = photoCount > 0 ?
-                        `<span class="inline-flex items-center text-xs mt-3 text-gray-800">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                            </svg>
-                            ${photoCount} 张照片
-                        </span>
-                    ` : '';
-
-                    element.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                        </svg>
-                        <span class="mt-2 text-sm font-medium text-center text-gray-700 px-2 break-all">${folderName}</span>
-                        ${photoCountBadge}
-                    `;
-                    this.elements.galleryContent.appendChild(element);
-                });
-            },
+    folders.forEach(folder => {
+        const folderName = folder.name;
+        const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
+        
+        const element = document.createElement('a');
+        element.href = `#${folderPath}`;
+        element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden p-4';
+        
+        // 不渲染张数角标，只显示图标和文件夹名称
+        element.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors mb-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+            </svg>
+            <span class="text-sm font-medium text-center text-gray-700 break-all leading-tight">${folderName}</span>
+        `;
+        this.elements.galleryContent.appendChild(element);
+    });
+},
 
             renderPhotos(photos) {
                 photos.forEach(photoName => {
