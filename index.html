@@ -11,19 +11,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Use Inter as the default font */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* A light gray background */
+            background-color: #f3f4f6;
         }
-        /* Style for the modal */
         #modal-backdrop {
             transition: opacity 0.3s ease;
         }
         #modal-content {
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
-        /* Custom scrollbar for better aesthetics */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -37,7 +34,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
-        /* Fade-in animation for gallery items */
         .gallery-item {
             animation: fadeIn 0.5s ease-in-out;
         }
@@ -91,244 +87,38 @@
     </div>
 
     <script>
-    const galleryApp = {
-        // ==================================================================
-        // --- CONFIGURATION ---
-        // ==================================================================
-        config: {
-            // 使用你的 R2 自定义域名
-            baseUrl: 'https://mufendd.de5.net/', 
-        },
+        const galleryApp = {
+            config: {
+                baseUrl: 'https://mufendd.de5.net/', 
+            },
 
-        // ==================================================================
-        // --- APPLICATION STATE ---
-        // ==================================================================
-        state: {
-            currentPath: '',
-        },
+            state: {
+                currentPath: '',
+            },
 
-        // ==================================================================
-        // --- DOM ELEMENTS ---
-        // ==================================================================
-        elements: {
-            loader: document.getElementById('loader'),
-            errorMessage: document.getElementById('error-message'),
-            galleryContent: document.getElementById('gallery-content'),
-            breadcrumbs: document.getElementById('breadcrumbs'),
-            modal: {
-                backdrop: document.getElementById('modal-backdrop'),
-                content: document.getElementById('modal-content'),
-                image: document.getElementById('modal-image'),
-                caption: document.getElementById('modal-caption'),
-            }
-        },
-
-        // ==================================================================
-        // --- CORE LOGIC ---
-        // ==================================================================
-
-        init() {
-            window.addEventListener('hashchange', () => this.handleHashChange());
-            this.handleHashChange();
-        },
-
-        handleHashChange() {
-            const path = window.location.hash.substring(1) || '';
-            this.loadGallery(path);
-        },
-        
-        async loadGallery(path) {
-            this.state.currentPath = path;
-            this.elements.loader.classList.remove('hidden');
-            this.elements.galleryContent.classList.add('hidden');
-            this.elements.errorMessage.classList.add('hidden');
-            this.elements.galleryContent.innerHTML = '';
-
-            this.updateBreadcrumbs(path);
-
-            // 读取 GitHub Pages 上的 index.json
-            const indexPath = `${path ? path + '/' : ''}index.json`;
-
-            try {
-                const response = await fetch(indexPath, { cache: 'no-cache' });
-                if (!response.ok) {
-                    throw new Error(`Folder not found or network error (status: ${response.status})`);
+            elements: {
+                loader: document.getElementById('loader'),
+                errorMessage: document.getElementById('error-message'),
+                galleryContent: document.getElementById('gallery-content'),
+                breadcrumbs: document.getElementById('breadcrumbs'),
+                modal: {
+                    backdrop: document.getElementById('modal-backdrop'),
+                    content: document.getElementById('modal-content'),
+                    image: document.getElementById('modal-image'),
+                    caption: document.getElementById('modal-caption'),
                 }
-                const data = await response.json();
+            },
 
-                data.folders = data.folders || [];
-                data.photos = data.photos || [];
-
-                data.folders.sort((a, b) => a.name.localeCompare(b.name));
-                data.photos.sort((a, b) => a.localeCompare(b));
-
-                this.renderFolders(data.folders || []);
-                this.renderPhotos(data.photos || []);
-
-            } catch (error) {
-                console.error('Failed to load gallery data:', error);
-                this.elements.errorMessage.textContent = `Error: Could not load gallery. Details: ${error.message}`;
-                this.elements.errorMessage.classList.remove('hidden');
-            } finally {
-                this.elements.loader.classList.add('hidden');
-                this.elements.galleryContent.classList.remove('hidden');
-            }
-        },
-
-        // ==================================================================
-        // --- RENDERING FUNCTIONS ---
-        // ==================================================================
-
-        renderFolders(folders) {
-            folders.forEach(folder => {
-                const folderName = folder.name;
-                const photoCount = folder.photoCount;
-                const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
-                
-                const element = document.createElement('a');
-                element.href = `#${folderPath}`;
-                element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden';
-                
-                const photoCountBadge = photoCount > 0 ?
-                    `<span class="inline-flex items-center text-xs mt-3 text-gray-800">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                        </svg>
-                        ${photoCount} 张照片
-                    </span>
-                ` : '';
-
-                element.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                    </svg>
-                    <span class="mt-2 text-sm font-medium text-center text-gray-700 px-2 break-all">${folderName}</span>
-                    ${photoCountBadge}
-                `;
-                this.elements.galleryContent.appendChild(element);
-            });
-        },
-
-        renderPhotos(photos) {
-            photos.forEach(photoName => {
-                const photoPath = `${this.config.baseUrl}${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
-                
-                const element = document.createElement('div');
-                element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
-                element.onclick = () => this.showModal(photoPath, photoName);
-
-                const img = document.createElement('img');
-                img.src = photoPath;
-                img.alt = photoName;
-                img.loading = 'lazy';
-                img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
-                img.onerror = function() {
-                    this.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
-                };
-
-                element.appendChild(img);
-                this.elements.galleryContent.appendChild(element);
-            });
-        },
-
-        updateBreadcrumbs(path) {
-            this.elements.breadcrumbs.innerHTML = '';
-            const parts = path.split('/').filter(Boolean);
-            
-            const homeLink = document.createElement('a');
-            homeLink.href = '#';
-            homeLink.className = 'hover:text-blue-600 hover:underline';
-            homeLink.textContent = '首页';
-            this.elements.breadcrumbs.appendChild(homeLink);
-
-            let cumulativePath = '';
-            parts.forEach(part => {
-                cumulativePath += (cumulativePath ? '/' : '') + part;
-                
-                const separator = document.createElement('span');
-                separator.className = 'mx-2';
-                separator.textContent = '/';
-                this.elements.breadcrumbs.appendChild(separator);
-
-                const partLink = document.createElement('a');
-                partLink.href = `#${cumulativePath}`;
-                partLink.className = 'hover:text-blue-600 hover:underline';
-                
-                try {
-                    partLink.textContent = decodeURIComponent(part);
-                } catch (e) {
-                    console.error("Could not decode breadcrumb part:", part, e);
-                    partLink.textContent = part;
-                }
-                this.elements.breadcrumbs.appendChild(partLink);
-            });
-        },
-
-        // ==================================================================
-        // --- MODAL CONTROLS ---
-        // ==================================================================
-
-        showModal(imageUrl, caption) {
-            this.elements.modal.image.src = imageUrl;
-            this.elements.modal.caption.textContent = caption;
-            
-            this.elements.modal.backdrop.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                this.elements.modal.backdrop.classList.add('opacity-100');
-                this.elements.modal.content.classList.remove('scale-95', 'opacity-0');
-                this.elements.modal.content.classList.add('scale-100', 'opacity-100');
-            });
-
-            window.addEventListener('keydown', this.handleKeydown);
-        },
-
-        closeModal() {
-            this.elements.modal.backdrop.classList.remove('opacity-100');
-            this.elements.modal.content.classList.remove('scale-100', 'opacity-100');
-            this.elements.modal.content.classList.add('scale-95', 'opacity-0');
-
-            setTimeout(() => {
-                this.elements.modal.backdrop.classList.add('hidden');
-                this.elements.modal.image.src = '';
-            }, 300);
-
-            window.removeEventListener('keydown', this.handleKeydown);
-        },
-
-        handleKeydown(e) {
-            if (e.key === 'Escape') {
-                galleryApp.closeModal();
-            }
-        }
-    };
-
-    document.addEventListener('DOMContentLoaded', () => galleryApp.init());
-</script>
-
-            // ==================================================================
-            // --- CORE LOGIC ---
-            // ==================================================================
-
-            /**
-             * Initializes the application.
-             */
             init() {
                 window.addEventListener('hashchange', () => this.handleHashChange());
                 this.handleHashChange();
             },
 
-            /**
-             * Handles changes to the URL hash to navigate the gallery.
-             */
             handleHashChange() {
                 const path = window.location.hash.substring(1) || '';
                 this.loadGallery(path);
             },
             
-            /**
-             * Loads and displays the contents of a directory.
-             * @param {string} path - The path to the directory to load.
-             */
             async loadGallery(path) {
                 this.state.currentPath = path;
                 this.elements.loader.classList.remove('hidden');
@@ -338,7 +128,7 @@
 
                 this.updateBreadcrumbs(path);
 
-                const indexPath = `${this.config.baseUrl}${path ? path + '/' : ''}index.json`;
+                const indexPath = `${path ? path + '/' : ''}index.json`;
 
                 try {
                     const response = await fetch(indexPath, { cache: 'no-cache' });
@@ -350,7 +140,6 @@
                     data.folders = data.folders || [];
                     data.photos = data.photos || [];
 
-                    // Alphebetically sort folders and photos
                     data.folders.sort((a, b) => a.name.localeCompare(b.name));
                     data.photos.sort((a, b) => a.localeCompare(b));
 
@@ -367,14 +156,6 @@
                 }
             },
 
-            // ==================================================================
-            // --- RENDERING FUNCTIONS ---
-            // ==================================================================
-
-            /**
-             * Renders folder items in the gallery.
-             * @param {Array<Object>} folders - An array of folder objects, now expecting {name: string, photoCount: number}.
-             */
             renderFolders(folders) {
                 folders.forEach(folder => {
                     const folderName = folder.name;
@@ -385,14 +166,12 @@
                     element.href = `#${folderPath}`;
                     element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden';
                     
-                    // --- NEW: Badge for photo count ---
-                    // Only show the badge if there are photos in the folder.
                     const photoCountBadge = photoCount > 0 ?
                         `<span class="inline-flex items-center text-xs mt-3 text-gray-800">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
                             </svg>
-                            ${photoCount} photos
+                            ${photoCount} 张照片
                         </span>
                     ` : '';
 
@@ -407,10 +186,6 @@
                 });
             },
 
-            /**
-             * Renders photo thumbnails in the gallery.
-             * @param {string[]} photos - An array of photo file names.
-             */
             renderPhotos(photos) {
                 photos.forEach(photoName => {
                     const photoPath = `${this.config.baseUrl}${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
@@ -433,10 +208,6 @@
                 });
             },
 
-            /**
-             * Updates the breadcrumb navigation bar.
-             * @param {string} path - The current directory path.
-             */
             updateBreadcrumbs(path) {
                 this.elements.breadcrumbs.innerHTML = '';
                 const parts = path.split('/').filter(Boolean);
@@ -470,15 +241,6 @@
                 });
             },
 
-            // ==================================================================
-            // --- MODAL CONTROLS ---
-            // ==================================================================
-
-            /**
-             * Displays the image modal.
-             * @param {string} imageUrl - The URL of the image to display.
-             * @param {string} caption - The caption for the image.
-             */
             showModal(imageUrl, caption) {
                 this.elements.modal.image.src = imageUrl;
                 this.elements.modal.caption.textContent = caption;
@@ -493,9 +255,6 @@
                 window.addEventListener('keydown', this.handleKeydown);
             },
 
-            /**
-             * Closes the image modal.
-             */
             closeModal() {
                 this.elements.modal.backdrop.classList.remove('opacity-100');
                 this.elements.modal.content.classList.remove('scale-100', 'opacity-100');
@@ -509,10 +268,6 @@
                 window.removeEventListener('keydown', this.handleKeydown);
             },
 
-            /**
-             * Handles keyboard events for the modal.
-             * @param {KeyboardEvent} e - The keyboard event.
-             */
             handleKeydown(e) {
                 if (e.key === 'Escape') {
                     galleryApp.closeModal();
@@ -522,6 +277,5 @@
 
         document.addEventListener('DOMContentLoaded', () => galleryApp.init());
     </script>
-
 </body>
 </html>
