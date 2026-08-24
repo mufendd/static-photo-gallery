@@ -182,35 +182,42 @@
                 });
             },
 
-            renderPhotos(photos) {
-                photos.forEach(photoName => {
-                    const relativePath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
-                    const photoPath = `${this.config.baseUrl}${encodeURI(relativePath)}`;
-                    
-                    const element = document.createElement('div');
-                    element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
-                    element.onclick = () => this.showModal(photoPath, photoName);
+renderPhotos(photos) {
+    photos.forEach(photoName => {
+        // 1. 拼接相对路径（如：沙发/1/DSC06169.JPG）
+        const rawPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
+        
+        // 2. 按层级拆分并单独对中文编码，保留 '/' 结构
+        const encodedPath = rawPath.split('/').map(encodeURIComponent).join('/');
 
-                    const img = document.createElement('img');
-                    img.src = photoPath;
-                    img.alt = photoName;
-                    img.loading = 'lazy';
-                    img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
-                    
-                    img.onerror = function() {
-                        if (this.src.endsWith('.jpg')) {
-                            this.src = this.src.replace(/\.jpg$/, '.JPG');
-                        } else if (this.src.endsWith('.JPG')) {
-                            this.src = this.src.replace(/\.JPG$/, '.jpg');
-                        } else {
-                            this.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
-                        }
-                    };
+        // 3. 拼接完整图片地址（注意变量名匹配）
+        const photoUrl = `${this.config.baseUrl.replace(/\/$/, '')}/${encodedPath}`;
 
-                    element.appendChild(img);
-                    this.elements.galleryContent.appendChild(element);
-                });
-            },
+        const element = document.createElement('div');
+        element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
+        element.onclick = () => this.showModal(photoUrl, photoName);
+
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        img.alt = photoName;
+        img.loading = 'lazy';
+        img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
+
+        // 4. 大小写后缀自动容错
+        img.onerror = function() {
+            if (this.src.endsWith('.jpg')) {
+                this.src = this.src.replace(/\.jpg$/, '.JPG');
+            } else if (this.src.endsWith('.JPG')) {
+                this.src = this.src.replace(/\.JPG$/, '.jpg');
+            } else {
+                this.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
+            }
+        };
+
+        element.appendChild(img);
+        this.elements.galleryContent.appendChild(element);
+    });
+},
 
             updateBreadcrumbs(path) {
                 this.elements.breadcrumbs.innerHTML = '';
