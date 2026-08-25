@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>作品集</title>
+    <title>Photo Gallery</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -11,16 +11,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Use Inter as the default font */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            background-color: #f3f4f6; /* A light gray background */
         }
+        /* Style for the modal */
         #modal-backdrop {
             transition: opacity 0.3s ease;
         }
         #modal-content {
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
+        /* Custom scrollbar for better aesthetics */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -34,6 +37,7 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        /* Fade-in animation for gallery items */
         .gallery-item {
             animation: fadeIn 0.5s ease-in-out;
         }
@@ -50,7 +54,7 @@
         
         <!-- Header -->
         <header class="mb-6">
-            <h1 class="text-2xl md:text-4xl font-bold text-gray-900">作品集</h1>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Photo Gallery</h1>
             <!-- Breadcrumb Navigation -->
             <nav id="breadcrumbs" class="text-lg mt-2 text-gray-600"></nav>
         </header>
@@ -88,15 +92,23 @@
 
     <script>
         const galleryApp = {
+            // ==================================================================
+            // --- CONFIGURATION ---
+            // ==================================================================
             config: {
-                baseUrl: 'https://mufendd.de5.net/', 
-                rootFolder: '作品集' // 对应你的 R2 顶级存储文件夹名
+                baseUrl: '', 
             },
 
+            // ==================================================================
+            // --- APPLICATION STATE ---
+            // ==================================================================
             state: {
                 currentPath: '',
             },
 
+            // ==================================================================
+            // --- DOM ELEMENTS ---
+            // ==================================================================
             elements: {
                 loader: document.getElementById('loader'),
                 errorMessage: document.getElementById('error-message'),
@@ -110,29 +122,30 @@
                 }
             },
 
+            // ==================================================================
+            // --- CORE LOGIC ---
+            // ==================================================================
+
+            /**
+             * Initializes the application.
+             */
             init() {
                 window.addEventListener('hashchange', () => this.handleHashChange());
                 this.handleHashChange();
             },
 
+            /**
+             * Handles changes to the URL hash to navigate the gallery.
+             */
             handleHashChange() {
-                const rawPath = window.location.hash.substring(1) || '';
-                let path = rawPath;
-                try {
-                    path = decodeURIComponent(rawPath);
-                } catch (e) {
-                    console.error("Path decode error:", e);
-                }
+                const path = window.location.hash.substring(1) || '';
                 this.loadGallery(path);
             },
-
-            // 统一构建 R2 资源的绝对编码 URL
-            buildUrl(relativePath) {
-                const fullPath = `${this.config.rootFolder}${relativePath ? '/' + relativePath : ''}`;
-                const encodedPath = fullPath.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-                return `${this.config.baseUrl.replace(/\/$/, '')}/${encodedPath}`;
-            },
-
+            
+            /**
+             * Loads and displays the contents of a directory.
+             * @param {string} path - The path to the directory to load.
+             */
             async loadGallery(path) {
                 this.state.currentPath = path;
                 this.elements.loader.classList.remove('hidden');
@@ -142,19 +155,19 @@
 
                 this.updateBreadcrumbs(path);
 
-                // 正确获取作品集下的 index.json 完整绝对路径
-                const indexJsonUrl = this.buildUrl(path ? `${path}/index.json` : 'index.json');
+                const indexPath = `${this.config.baseUrl}${path ? path + '/' : ''}index.json`;
 
                 try {
-                    const response = await fetch(indexJsonUrl, { cache: 'no-cache' });
+                    const response = await fetch(indexPath, { cache: 'no-cache' });
                     if (!response.ok) {
-                        throw new Error(`无法获取目录配置文件 (HTTP 状态码: ${response.status})`);
+                        throw new Error(`Folder not found or network error (status: ${response.status})`);
                     }
                     const data = await response.json();
 
                     data.folders = data.folders || [];
                     data.photos = data.photos || [];
 
+                    // Alphebetically sort folders and photos
                     data.folders.sort((a, b) => a.name.localeCompare(b.name));
                     data.photos.sort((a, b) => a.localeCompare(b));
 
@@ -163,7 +176,7 @@
 
                 } catch (error) {
                     console.error('Failed to load gallery data:', error);
-                    this.elements.errorMessage.textContent = `加载失败: 无法读取画廊数据。请检查 index.json 是否存在。详情: ${error.message}`;
+                    this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
                     this.elements.errorMessage.classList.remove('hidden');
                 } finally {
                     this.elements.loader.classList.add('hidden');
@@ -171,62 +184,76 @@
                 }
             },
 
+            // ==================================================================
+            // --- RENDERING FUNCTIONS ---
+            // ==================================================================
+
+            /**
+             * Renders folder items in the gallery.
+             * @param {Array<Object>} folders - An array of folder objects, now expecting {name: string, photoCount: number}.
+             */
             renderFolders(folders) {
                 folders.forEach(folder => {
                     const folderName = folder.name;
+                    const photoCount = folder.photoCount;
                     const folderPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${folderName}`;
                     
                     const element = document.createElement('a');
-                    element.href = `#${encodeURI(folderPath)}`;
-                    element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden p-4';
+                    element.href = `#${folderPath}`;
+                    element.className = 'gallery-item group relative aspect-square flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-500 transition-all duration-300 cursor-pointer overflow-hidden';
                     
+                    // --- NEW: Badge for photo count ---
+                    // Only show the badge if there are photos in the folder.
+                    const photoCountBadge = photoCount > 0 ?
+                        `<span class="inline-flex items-center text-xs mt-3 text-gray-800">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                            </svg>
+                            ${photoCount} photos
+                        </span>
+                    ` : '';
+
                     element.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors mb-2" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 group-hover:text-blue-600 transition-colors" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                         </svg>
-                        <span class="text-sm font-medium text-center text-gray-700 break-all leading-tight">${folderName}</span>
+                        <span class="mt-2 text-sm font-medium text-center text-gray-700 px-2 break-all">${folderName}</span>
+                        ${photoCountBadge}
                     `;
                     this.elements.galleryContent.appendChild(element);
                 });
             },
 
+            /**
+             * Renders photo thumbnails in the gallery.
+             * @param {string[]} photos - An array of photo file names.
+             */
             renderPhotos(photos) {
                 photos.forEach(photoName => {
-                    const relativePhotoPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
-                    const photoUrl = this.buildUrl(relativePhotoPath);
-
+                    const photoPath = `${this.config.baseUrl}${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
+                    
                     const element = document.createElement('div');
                     element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
-                    
+                    element.onclick = () => this.showModal(photoPath, photoName);
+
                     const img = document.createElement('img');
-                    img.src = photoUrl;
+                    img.src = photoPath;
                     img.alt = photoName;
                     img.loading = 'lazy';
                     img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
-
-                    // 扩展名大小写容错（防止 json 里大写 JPG 而服务器上是小写 jpg 导致不加载）
-                    let hasRetried = false;
-                    img.onerror = () => {
-                        if (!hasRetried) {
-                            hasRetried = true;
-                            if (img.src.endsWith('.jpg')) {
-                                img.src = img.src.replace(/\.jpg$/, '.JPG');
-                                return;
-                            } else if (img.src.endsWith('.JPG')) {
-                                img.src = img.src.replace(/\.JPG$/, '.jpg');
-                                return;
-                            }
-                        }
-                        element.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
+                    img.onerror = function() {
+                        this.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
                     };
-
-                    element.onclick = () => this.showModal(img.src, photoName);
 
                     element.appendChild(img);
                     this.elements.galleryContent.appendChild(element);
                 });
             },
 
+            /**
+             * Updates the breadcrumb navigation bar.
+             * @param {string} path - The current directory path.
+             */
             updateBreadcrumbs(path) {
                 this.elements.breadcrumbs.innerHTML = '';
                 const parts = path.split('/').filter(Boolean);
@@ -234,7 +261,7 @@
                 const homeLink = document.createElement('a');
                 homeLink.href = '#';
                 homeLink.className = 'hover:text-blue-600 hover:underline';
-                homeLink.textContent = '首页';
+                homeLink.textContent = 'Home';
                 this.elements.breadcrumbs.appendChild(homeLink);
 
                 let cumulativePath = '';
@@ -247,13 +274,28 @@
                     this.elements.breadcrumbs.appendChild(separator);
 
                     const partLink = document.createElement('a');
-                    partLink.href = `#${encodeURI(cumulativePath)}`;
+                    partLink.href = `#${cumulativePath}`;
                     partLink.className = 'hover:text-blue-600 hover:underline';
-                    partLink.textContent = part;
+                    
+                    try {
+                        partLink.textContent = decodeURIComponent(part);
+                    } catch (e) {
+                        console.error("Could not decode breadcrumb part:", part, e);
+                        partLink.textContent = part;
+                    }
                     this.elements.breadcrumbs.appendChild(partLink);
                 });
             },
 
+            // ==================================================================
+            // --- MODAL CONTROLS ---
+            // ==================================================================
+
+            /**
+             * Displays the image modal.
+             * @param {string} imageUrl - The URL of the image to display.
+             * @param {string} caption - The caption for the image.
+             */
             showModal(imageUrl, caption) {
                 this.elements.modal.image.src = imageUrl;
                 this.elements.modal.caption.textContent = caption;
@@ -268,6 +310,9 @@
                 window.addEventListener('keydown', this.handleKeydown);
             },
 
+            /**
+             * Closes the image modal.
+             */
             closeModal() {
                 this.elements.modal.backdrop.classList.remove('opacity-100');
                 this.elements.modal.content.classList.remove('scale-100', 'opacity-100');
@@ -281,6 +326,10 @@
                 window.removeEventListener('keydown', this.handleKeydown);
             },
 
+            /**
+             * Handles keyboard events for the modal.
+             * @param {KeyboardEvent} e - The keyboard event.
+             */
             handleKeydown(e) {
                 if (e.key === 'Escape') {
                     galleryApp.closeModal();
@@ -290,5 +339,6 @@
 
         document.addEventListener('DOMContentLoaded', () => galleryApp.init());
     </script>
+
 </body>
 </html>
