@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,6 +90,7 @@
         const galleryApp = {
             config: {
                 baseUrl: 'https://mufendd.de5.net/', 
+                rootFolder: '作品集' // 对应你的 R2 顶级存储文件夹名
             },
 
             state: {
@@ -124,7 +125,14 @@
                 }
                 this.loadGallery(path);
             },
-            
+
+            // 统一构建 R2 资源的绝对编码 URL
+            buildUrl(relativePath) {
+                const fullPath = `${this.config.rootFolder}${relativePath ? '/' + relativePath : ''}`;
+                const encodedPath = fullPath.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+                return `${this.config.baseUrl.replace(/\/$/, '')}/${encodedPath}`;
+            },
+
             async loadGallery(path) {
                 this.state.currentPath = path;
                 this.elements.loader.classList.remove('hidden');
@@ -134,13 +142,13 @@
 
                 this.updateBreadcrumbs(path);
 
-                // 直接使用标准相对路径，让浏览器原生处理 fetch 的 URL 转义
-                const indexPath = path ? `${path}/index.json` : 'index.json';
+                // 正确获取作品集下的 index.json 完整绝对路径
+                const indexJsonUrl = this.buildUrl(path ? `${path}/index.json` : 'index.json');
 
                 try {
-                    const response = await fetch(indexPath, { cache: 'no-cache' });
+                    const response = await fetch(indexJsonUrl, { cache: 'no-cache' });
                     if (!response.ok) {
-                        throw new Error(`Folder not found or network error (status: ${response.status})`);
+                        throw new Error(`无法获取目录配置文件 (HTTP 状态码: ${response.status})`);
                     }
                     const data = await response.json();
 
@@ -155,7 +163,7 @@
 
                 } catch (error) {
                     console.error('Failed to load gallery data:', error);
-                    this.elements.errorMessage.textContent = `Error: Could not load gallery. Check if an 'index.json' file exists for this folder. Details: ${error.message}`;
+                    this.elements.errorMessage.textContent = `加载失败: 无法读取画廊数据。请检查 index.json 是否存在。详情: ${error.message}`;
                     this.elements.errorMessage.classList.remove('hidden');
                 } finally {
                     this.elements.loader.classList.add('hidden');
@@ -182,53 +190,42 @@
                 });
             },
 
-renderPhotos(photos) {
-    photos.forEach(photoName => {
-        // 1. 自动拼接 R2 对应的顶级根目录 "作品集/"
-        const fullPath = `作品集/${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
-        
-        // 2. 将每个路径分段单独转码（确保斜杠不被转义，中文完美兼容）
-        const encodedPath = fullPath.split('/').map(encodeURIComponent).join('/');
-        
-        // 3. 拼接完整 URL
-        const photoUrl = `${this.config.baseUrl.replace(/\/$/, '')}/${encodedPath}`;
+            renderPhotos(photos) {
+                photos.forEach(photoName => {
+                    const relativePhotoPath = `${this.state.currentPath ? this.state.currentPath + '/' : ''}${photoName}`;
+                    const photoUrl = this.buildUrl(relativePhotoPath);
 
-        const element = document.createElement('div');
-        element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
-        
-        const img = document.createElement('img');
-        img.src = photoUrl;
-        img.alt = photoName;
-        img.loading = 'lazy';
-        img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
+                    const element = document.createElement('div');
+                    element.className = 'gallery-item group relative aspect-square bg-gray-200 rounded-lg shadow-sm overflow-hidden cursor-pointer';
+                    
+                    const img = document.createElement('img');
+                    img.src = photoUrl;
+                    img.alt = photoName;
+                    img.loading = 'lazy';
+                    img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
 
-        // 4. 大小写容错处理
-        let hasRetried = false;
-        img.onerror = () => {
-            if (!hasRetried) {
-                hasRetried = true;
-                // 如果当前试的是小写，切换到大写；反之亦然
-                if (img.src.endsWith('.jpg')) {
-                    img.src = img.src.replace(/\.jpg$/, '.JPG');
-                    return;
-                } else if (img.src.endsWith('.JPG')) {
-                    img.src = img.src.replace(/\.JPG$/, '.jpg');
-                    return;
-                }
-            }
-            element.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
-        };
+                    // 扩展名大小写容错（防止 json 里大写 JPG 而服务器上是小写 jpg 导致不加载）
+                    let hasRetried = false;
+                    img.onerror = () => {
+                        if (!hasRetried) {
+                            hasRetried = true;
+                            if (img.src.endsWith('.jpg')) {
+                                img.src = img.src.replace(/\.jpg$/, '.JPG');
+                                return;
+                            } else if (img.src.endsWith('.JPG')) {
+                                img.src = img.src.replace(/\.JPG$/, '.jpg');
+                                return;
+                            }
+                        }
+                        element.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 text-red-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
+                    };
 
-        element.onclick = () => this.showModal(img.src, photoName);
+                    element.onclick = () => this.showModal(img.src, photoName);
 
-        element.appendChild(img);
-        this.elements.galleryContent.appendChild(element);
-    });
-}
-        element.appendChild(img);
-        this.elements.galleryContent.appendChild(element);
-    });
-},
+                    element.appendChild(img);
+                    this.elements.galleryContent.appendChild(element);
+                });
+            },
 
             updateBreadcrumbs(path) {
                 this.elements.breadcrumbs.innerHTML = '';
