@@ -141,16 +141,22 @@
                     const photos = data.photos || [];
 
                     folders.sort((a, b) => {
-                        const order = this.config.folderOrder || [];
-                        const indexA = order.indexOf(a.name);
-                        const indexB = order.indexOf(b.name);
+                            const order = this.config.folderOrder || [];
+                            const indexA = order.indexOf(a.name);
+                            const indexB = order.indexOf(b.name);
     
-                        // 如果不在自定义排序数组里，默认放到最后面
-                        const posA = indexA === -1 ? 999 : indexA;
-                        const posB = indexB === -1 ? 999 : indexB;
+                            // 1. 如果都在自定义列表里，按列表顺序排
+                            if (indexA !== -1 && indexB !== -1) {
+                                return indexA - indexB;
+                            }
+                            // 2. 如果只有 a 在列表中，a 排在前面
+                            if (indexA !== -1) return -1;
+                            // 3. 如果只有 b 在列表中，b 排在前面
+                            if (indexB !== -1) return 1;
     
-                        return posA - posB;
-                    });
+                            // 4. 如果都不在列表中（如纯数字文件夹 1, 2, 10），使用自然数字大小排序
+                            return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+                        });
                     photos.sort((a, b) => a.localeCompare(b, 'zh-CN'));
 
                     this.renderFolders(folders);
